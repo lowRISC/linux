@@ -48,6 +48,7 @@ obj-$(CONFIG_SERIAL_IP22_ZILOG)		+= ip22zilog.o
 obj-$(CONFIG_SERIAL_JSM)		+= jsm/
 obj-$(CONFIG_SERIAL_LANTIQ)		+= lantiq.o
 obj-$(CONFIG_SERIAL_LITEUART)		+= liteuart.o
+obj-$(CONFIG_SERIAL_LOWRISC_OPENTITAN)	+= lowrisc_opentitan.o
 obj-$(CONFIG_SERIAL_HS_LPC32XX)		+= lpc32xx_hs.o
 obj-$(CONFIG_SERIAL_MAX3100)		+= max3100.o
 obj-$(CONFIG_SERIAL_MAX310X)		+= max310x.o
