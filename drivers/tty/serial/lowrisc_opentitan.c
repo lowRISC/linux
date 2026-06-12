@@ -73,12 +73,17 @@ struct lowrisc_ot_serial_port {
 #define OT_UART_REG_WDATA		7
 #define OT_UART_REG_FIFO_CTRL		8
 #define OT_UART_REG_FIFO_STATUS		9
+#define OT_UART_REG_OVRD		10
+#define OT_UART_REG_VAL			11
+#define OT_UART_REG_TIMEOUT_CTRL	12
 
 /*
  * INTR_* register fields.
  */
 #define OT_UART_INTR_TX_WATERMARK	0x1
 #define OT_UART_INTR_RX_WATERMARK	0x2
+/* RW1C */
+#define OT_UART_INTR_RX_TIMEOUT		0x40
 
 /*
  * FIFO_CTRL register fields.
@@ -87,8 +92,18 @@ struct lowrisc_ot_serial_port {
 #define OT_UART_FIFO_CTRL_TXRST		0x2
 #define OT_UART_FIFO_CTRL_RXILVL_SHIFT	2
 #define OT_UART_FIFO_CTRL_RXILVL_1	0x0
+#define OT_UART_FIFO_CTRL_RXILVL_2	0x1
+#define OT_UART_FIFO_CTRL_RXILVL_4	0x2
+#define OT_UART_FIFO_CTRL_RXILVL_8	0x3
+#define OT_UART_FIFO_CTRL_RXILVL_16	0x4
+#define OT_UART_FIFO_CTRL_RXILVL_32	0x5
+#define OT_UART_FIFO_CTRL_RXILVL_62	0x6
 #define OT_UART_FIFO_CTRL_TXILVL_SHIFT	5
 #define OT_UART_FIFO_CTRL_TXILVL_1	0x0
+#define OT_UART_FIFO_CTRL_TXILVL_2	0x1
+#define OT_UART_FIFO_CTRL_TXILVL_4	0x2
+#define OT_UART_FIFO_CTRL_TXILVL_8	0x3
+#define OT_UART_FIFO_CTRL_TXILVL_16	0x4
 
 /*
  * FIFO_STATUS register fields.
@@ -97,6 +112,24 @@ struct lowrisc_ot_serial_port {
 #define OT_UART_FIFO_STATUS_TXLVL_MASK	0xff
 #define OT_UART_FIFO_STATUS_RXLVL_SHIFT	16
 #define OT_UART_FIFO_STATUS_RXLVL_MASK	0xff
+
+/*
+ * TIMEOUT_CTRL register fields.
+ */
+#define OT_UART_TIMEOUT_CTRL_VAL_SHIFT	0
+#define OT_UART_TIMEOUT_CTRL_VAL_MASK	0xffffff
+#define OT_UART_TIMEOUT_CTRL_EN		0x80000000
+
+/*
+ * Compile-time Configuration.
+ */
+/* RX Watermark level in characters. */
+#define OT_UART_FIFO_CTRL_RXILVL	OT_UART_FIFO_CTRL_RXILVL_8
+/* TX Watermark level in characters. */
+#define OT_UART_FIFO_CTRL_TXILVL	OT_UART_FIFO_CTRL_TXILVL_16
+/* RX Timeout interrupt threshold in bit times. */
+#define OT_UART_RX_TIMEOUT_CTRL_VAL	(8 * 2)
+
 
 #ifdef CONFIG_SERIAL_LOWRISC_OPENTITAN_CONSOLE
 
@@ -154,6 +187,15 @@ static void __ot_serial_enable_rx_watermark(struct lowrisc_ot_serial_port *p)
 	__ot_serial_write_reg(ie, OT_UART_REG_INTR_ENABLE, p);
 }
 
+static void __ot_serial_enable_rx_timeout(struct lowrisc_ot_serial_port *p)
+{
+	u32 ie;
+	ie = __ot_serial_read_reg(OT_UART_REG_INTR_ENABLE, p);
+	ie |= OT_UART_INTR_RX_TIMEOUT;
+	__ot_serial_write_reg(ie, OT_UART_REG_INTR_ENABLE, p);
+
+}
+
 static void __ot_serial_disable_tx_watermark(struct lowrisc_ot_serial_port *p)
 {
 	u32 ie;
@@ -170,13 +212,31 @@ static void __ot_serial_disable_rx_watermark(struct lowrisc_ot_serial_port *p)
 	__ot_serial_write_reg(ie, OT_UART_REG_INTR_ENABLE, p);
 }
 
+static void __ot_serial_disable_rx_timeout(struct lowrisc_ot_serial_port *p)
+{
+	u32 ie;
+	ie = __ot_serial_read_reg(OT_UART_REG_INTR_ENABLE, p);
+	ie &= ~OT_UART_INTR_RX_TIMEOUT;
+	__ot_serial_write_reg(ie, OT_UART_REG_INTR_ENABLE, p);
+
+}
+
 static void __ot_serial_init(struct lowrisc_ot_serial_port *p)
 {
+	u32 v;
+
+	/* disable interrupts. */
 	__ot_serial_write_reg(0, OT_UART_REG_INTR_ENABLE, p);
 
-	u32 v = OT_UART_FIFO_CTRL_RXRST | OT_UART_FIFO_CTRL_TXRST |
-		(OT_UART_FIFO_CTRL_RXILVL_1 << OT_UART_FIFO_CTRL_RXILVL_SHIFT) |
-		(OT_UART_FIFO_CTRL_TXILVL_1 << OT_UART_FIFO_CTRL_TXILVL_SHIFT);
+	v = OT_UART_FIFO_CTRL_RXRST | OT_UART_FIFO_CTRL_TXRST |
+		(OT_UART_FIFO_CTRL_RXILVL << OT_UART_FIFO_CTRL_RXILVL_SHIFT) |
+		(OT_UART_FIFO_CTRL_TXILVL << OT_UART_FIFO_CTRL_TXILVL_SHIFT);
+
+	v = OT_UART_TIMEOUT_CTRL_EN |
+		((OT_UART_RX_TIMEOUT_CTRL_VAL & OT_UART_TIMEOUT_CTRL_VAL_MASK)
+			<< OT_UART_TIMEOUT_CTRL_VAL_SHIFT);
+
+	__ot_serial_write_reg(v, OT_UART_REG_TIMEOUT_CTRL, p);
 
 	__ot_serial_write_reg(v, OT_UART_REG_FIFO_CTRL, p);
 }
@@ -257,6 +317,7 @@ static int lowrisc_ot_serial_startup(struct uart_port *port) {
 
 	__ot_serial_enable_tx_watermark(p);
 	__ot_serial_enable_rx_watermark(p);
+	__ot_serial_enable_rx_timeout(p);
 
 	uart_port_unlock_irqrestore(&p->port, flags);
 
@@ -271,6 +332,7 @@ static void lowrisc_ot_serial_shutdown(struct uart_port *port) {
 
 	__ot_serial_disable_tx_watermark(p);
 	__ot_serial_disable_rx_watermark(p);
+	__ot_serial_disable_rx_timeout(p);
 
 	uart_port_unlock_irqrestore(&p->port, flags);
 }
@@ -312,6 +374,7 @@ static void lowrisc_ot_serial_stop_rx(struct uart_port *port)
 	struct lowrisc_ot_serial_port *p = port_to_lowrisc_ot_serial_port(port);
 
 	__ot_serial_disable_rx_watermark(p);
+	__ot_serial_disable_rx_timeout(p);
 }
 
 static void lowrisc_ot_serial_start_rx(struct uart_port *port)
@@ -319,6 +382,7 @@ static void lowrisc_ot_serial_start_rx(struct uart_port *port)
 	struct lowrisc_ot_serial_port *p = port_to_lowrisc_ot_serial_port(port);
 
 	__ot_serial_enable_rx_watermark(p);
+	__ot_serial_enable_rx_timeout(p);
 
 }
 
@@ -495,9 +559,12 @@ static irqreturn_t lowrisc_ot_serial_irq(int irq, void *dev_id)
 		return IRQ_NONE;
 	}
 
-	/* handle RX watermark interrupts first. */
-	if (ip & OT_UART_INTR_RX_WATERMARK)
+	/* handle RX interrupts first. */
+	if (ip & OT_UART_INTR_RX_WATERMARK || ip & OT_UART_INTR_RX_TIMEOUT) {
 		__ot_serial_receive_chars(p);
+		/* RX timeout interrupt is RW1C */
+		__ot_serial_write_reg(OT_UART_INTR_RX_TIMEOUT, OT_UART_REG_INTR_STATE, p);
+	}
 	if (ip & OT_UART_INTR_TX_WATERMARK)
 		__ot_serial_transmit_chars(p);
 
