@@ -1043,6 +1043,10 @@ config SERIAL_LOWRISC_OPENTITAN_CONSOLE
 	  your boot loader about how to pass options to the kernel at
 	  boot time.)
 
+	  When earlycon option is enabled the following kernel command line
+	  snippet may be used:
+	    earlycon=opentitan_uart,<addr>
+
 config SERIAL_QE
 	tristate "Freescale QUICC Engine serial port support"
 	depends on QUICC_ENGINE

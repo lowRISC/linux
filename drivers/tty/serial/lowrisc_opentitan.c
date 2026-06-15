@@ -533,6 +533,33 @@ console_initcall(lowrisc_ot_serial_console_init);
 
 #endif /* CONFIG_SERIAL_LOWRISC_OPENTITAN_CONSOLE */
 
+#ifdef CONFIG_SERIAL_EARLYCON
+
+static void lowrisc_ot_serial_early_write(struct console *co, const char *s, unsigned int n)
+{
+	struct earlycon_device *dev = co->data;
+	struct uart_port *port = &dev->port;
+
+	uart_console_write(port, s, n, lowrisc_ot_serial_console_putchar);
+}
+
+static int __init lowrisc_ot_serial_early_setup(struct earlycon_device *dev,
+						const char *options)
+{
+	struct uart_port *port = &dev->port;
+
+	if (!port->membase)
+		return -ENODEV;
+
+	dev->con->write = lowrisc_ot_serial_early_write;
+
+	return 0;
+}
+
+OF_EARLYCON_DECLARE(opentitan_uart, "lowrisc,opentitan-uart-v2", lowrisc_ot_serial_early_setup);
+
+#endif /* CONFIG_SERIAL_EARLYCON */
+
 /*
  * Devicetree compatible strings.
  */
