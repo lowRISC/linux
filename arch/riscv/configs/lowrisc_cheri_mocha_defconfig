@@ -1,0 +1,63 @@
+# ISA settings.
+
+CONFIG_NONPORTABLE=y
+CONFIG_ARCH_RV64I=y
+CONFIG_RISCV_CHERI=y
+CONFIG_MMU=y
+CONFIG_RISCV_ISA_FALLBACK=y
+CONFIG_RISCV_ISA_C=y
+CONFIG_RISCV_PROBE_UNALIGNED_ACCESS=y
+
+# General settings.
+
+CONFIG_DEFAULT_HOSTNAME="Mocha"
+CONFIG_EXPERT=y
+
+# Disabled ISA features.
+
+# CONFIG_RISCV_ISA_SUPM is not set
+# CONFIG_RISCV_ISA_SVNAPOT is not set
+# CONFIG_RISCV_ISA_SVPBMT is not set
+# CONFIG_RISCV_ISA_V is not set
+# CONFIG_RISCV_ISA_ZAWRS is not set
+# CONFIG_RISCV_ISA_ZABHA is not set
+# CONFIG_RISCV_ISA_ZACAS is not set
+# CONFIG_FPU is not set
+
+# initramfs support with gzip compression.
+
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_RD_GZIP=y
+# CONFIG_RD_BZIP2 is not set
+# CONFIG_RD_LZMA is not set
+# CONFIG_RD_XZ is not set
+# CONFIG_RD_LZO is not set
+# CONFIG_RD_LZ4 is not set
+# CONFIG_RD_ZSTD is not set
+
+# Serial console.
+
+CONFIG_TTY=y
+CONFIG_VT=y
+CONFIG_TTY_PRINTK=y
+CONFIG_CMDLINE="earlycon=sbi console=ttyOT0 hash_pointers=always"
+CONFIG_CMDLINE_EXTEND=y
+CONFIG_SERIAL_EARLYCON_RISCV_SBI=y
+CONFIG_SERIAL_LOWRISC_OPENTITAN=y
+CONFIG_SERIAL_LOWRISC_OPENTITAN_CONSOLE=y
+CONFIG_PRINTK_TIME=y
+
+# ELF and #! support.
+
+CONFIG_BINFMT_ELF=y
+CONFIG_BINFMT_SCRIPT=y
+
+# Disabled features.
+
+# CONFIG_EFI is not set
+# CONFIG_BLOCK is not set
+# CONFIG_VIRTUALIZATION is not set
+# CONFIG_NET is not set
+# CONFIG_COMPAT_BRK is not set
+# CONFIG_HID_SUPPORT is not set
+# CONFIG_USB_SUPPORT is not set
