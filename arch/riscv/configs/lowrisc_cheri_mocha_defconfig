@@ -9,9 +9,12 @@ CONFIG_RISCV_ISA_C=y
 CONFIG_RISCV_PROBE_UNALIGNED_ACCESS=y
 
 # General settings.
-
 CONFIG_DEFAULT_HOSTNAME="Mocha"
 CONFIG_EXPERT=y
+
+# Preemption behaviour.
+CONFIG_NO_HZ_IDLE=y
+CONFIG_PREEMPT_VOLUNTARY=y
 
 # Disabled ISA features.
 
