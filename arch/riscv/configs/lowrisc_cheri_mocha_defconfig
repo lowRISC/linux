@@ -26,6 +26,10 @@ CONFIG_PREEMPT_VOLUNTARY=y
 # CONFIG_RISCV_ISA_ZABHA is not set
 # CONFIG_RISCV_ISA_ZACAS is not set
 # CONFIG_FPU is not set
+# CONFIG_RISCV_ISA_VENDOR_EXT_ANDES is not set
+# CONFIG_RISCV_ISA_VENDOR_EXT_MIPS is not set
+# CONFIG_RISCV_ISA_VENDOR_EXT_SIFIVE is not set
+# CONFIG_RISCV_ISA_VENDOR_EXT_THEAD is not set
 
 # initramfs support with gzip compression.
 
