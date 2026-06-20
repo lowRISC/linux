@@ -505,9 +505,40 @@ static void lowrisc_ot_serial_console_write_atomic(struct console *co,
 static void lowrisc_ot_serial_console_write_thread(struct console *co,
 						   struct nbcon_write_context *wctxt)
 {
-	/* TODO: an implementation that doesn't just call write_atomic. */
-	lowrisc_ot_serial_console_write_atomic(co, wctxt);
+	struct lowrisc_ot_serial_port *p = lowrisc_ot_serial_console_port[co->index];
+	struct uart_port *port = &p->port;
+	u32 ie;
 
+	if (!p)
+		return;
+
+	if (!nbcon_enter_unsafe(wctxt))
+		return;
+
+	/* save and restore INTR_ENABLE */
+	ie = __ot_serial_read_reg(OT_UART_REG_INTR_ENABLE, p);
+	__ot_serial_write_reg(0, OT_UART_REG_INTR_ENABLE, p);
+
+	if (nbcon_exit_unsafe(wctxt)) {
+		int len = READ_ONCE(wctxt->len);
+		int i;
+
+		for (i = 0; i < len; i++) {
+			if (!nbcon_enter_unsafe(wctxt))
+				break;
+			uart_console_write(port, wctxt->outbuf + i, 1,
+					   lowrisc_ot_serial_console_putchar);
+			if (!nbcon_exit_unsafe(wctxt))
+				break;
+		}
+	}
+
+	while (!nbcon_enter_unsafe(wctxt))
+		nbcon_reacquire_nobuf(wctxt);
+
+	__ot_serial_write_reg(ie, OT_UART_REG_INTR_ENABLE, p);
+
+	nbcon_exit_unsafe(wctxt);
 }
 
 static struct console lowrisc_ot_serial_console = {
